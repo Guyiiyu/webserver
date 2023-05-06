@@ -1,3 +1,40 @@
+#ifndef THREADPOOL_H
+#define THREADPOOL_H
+
+
+#include <pthread.h>
+#include <list>
+#include <exception>
+#include <pthread.h>
+#include <cstdio>
+
+
+#include "locker.h"
+
+// 线程池类，模板类代码复用，T为任务
+template<typename T>
+class Threadpool {
+public:
+
+    Threadpool(int thread_number = 8, int max_requests = 10000);
+    ~Threadpool();
+    bool append(T* request);    // 添加新的任务
+
+private:
+    static void * worker(void * arg);
+    void run();
+
+private:
+    int m_thread_number;        // 线程数量
+    pthread_t *m_threads;       // 线程池数组
+    int m_max_request;          // 请求中最多允许等待的请求数量
+    std::list<T*> m_workqueue;   // 请求队列
+    Locker m_queuelocker;       // 请求队列互斥锁
+    Sem m_queuestat;            // 信号量判断是否有任务需要处理
+    bool m_stop;                // 是否结束线程  
+
+};
+
 #include "threadpool.h"
 
 template<typename T>
@@ -16,7 +53,7 @@ Threadpool<T>::Threadpool(int thread_number, int max_requests):
     // 创建线程，设置为分离
     for(int i=0; i<thread_number; i++ ) {
         printf("create the %dth thread\n", i);
-        if(pthread_create(m_threads+i, NULL, worker, this)) {
+        if(pthread_create(m_threads+i, NULL, worker, this) != 0) {
             delete [] m_threads;
             throw std::exception();
         }
@@ -49,7 +86,8 @@ bool Threadpool<T>::append(T* request) {
 }
 template<typename T>
 void * Threadpool<T>::worker(void * arg) {
-    Threadpool<T> * pool = (Threadpool<T> *) arg;
+    // Threadpool<T> * pool = (Threadpool<T> *) arg;
+    Threadpool *pool = (Threadpool *)arg;
     pool->run();
     return pool;
 }
@@ -72,7 +110,9 @@ void Threadpool<T>::run() {
             continue;
         }
 
-        request->pocess();
+        request->process();
 
     }
 }
+
+#endif
