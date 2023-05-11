@@ -17,6 +17,8 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/uio.h>
+#include <sys/ucontext.h>
+#include <cstdarg>
 
 #include "locker.h"
 #include "threadpool.h"
@@ -56,7 +58,7 @@ public:
     ~Httpconn() = default;
 
     void process();                                 // 处理客户端请求
-    void init(int sockfd, sockaddr_in &addr);       // 初始化新连接
+    void init(int sockfd, const sockaddr_in &addr);       // 初始化新连接
     void close_conn();                              // 关闭连接 
     bool read();                                    // 非阻塞读
     bool write();                                   // 非阻塞写
@@ -83,7 +85,7 @@ private:
     CHECK_STATE m_check_state;              // 主状态机所处状态
 
     char *m_url;                            // 请求目标的目标文件名
-    char *m_versoin;                        // 协议版本
+    char *m_version;                        // 协议版本
     METHOD m_method;                        // 请求方法
     char *m_host;                           // 主机名
     bool m_linger;                          // 是否保持连接

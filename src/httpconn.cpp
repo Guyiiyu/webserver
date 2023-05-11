@@ -63,7 +63,7 @@ void modifyfd(int epollfd, int fd, int event) {
 } 
 
 // 初始化连接
-void Httpconn::init(int sockfd, sockaddr_in &addr) {
+void Httpconn::init(int sockfd, const sockaddr_in &addr) {
     m_addr = addr;
     m_sockfd = sockfd;
 
@@ -78,17 +78,26 @@ void Httpconn::init(int sockfd, sockaddr_in &addr) {
 }
 
 void Httpconn::init() {
-    m_check_state = CHECK_STATE_REQUESTLINE;
-    m_checked_index = 0;
-    m_start_line = 0;
-    m_url = NULL;
-    m_method = GET;
-    m_versoin = 0;
-    m_linger = false;
-    m_host = NULL;
-    bzero(m_read_buf, READ_BUFFER_SIZE);
     bytes_have_send = 0;
     bytes_to_send = 0; 
+
+    m_check_state = CHECK_STATE_REQUESTLINE;
+    m_linger = false;
+
+    m_method = GET;
+    m_url = NULL;
+    m_version = NULL;
+    m_content_len = 0;
+    m_host = NULL;
+    m_checked_index = 0;
+    m_start_line = 0;
+
+    m_read_idx = 0;
+    m_write_idx = 0; 
+
+    bzero(m_read_buf, READ_BUFFER_SIZE);
+    bzero(m_write_buf, WRITE_BUFFER_SIZE);
+    bzero(m_real_file, FILENAME_LEN);
 }
 
 // 关闭连接
@@ -198,13 +207,13 @@ Httpconn::HTTP_CODE Httpconn::parse_request_line(char *text) {
         return BAD_REQUEST;
     }
     // /index.html HTTP/1.1
-    m_versoin = strpbrk(m_url, " \t");
-    if(!m_versoin) {
+    m_version = strpbrk(m_url, " \t");
+    if(!m_version) {
         return BAD_REQUEST;
     }
     // /index.html\0HTTP/1.1
-    *m_versoin++ = '\0';
-    if(strcasecmp(m_versoin, "HTTP/1.1")) {
+    *m_version++ = '\0';
+    if(strcasecmp(m_version, "HTTP/1.1")) {
         return BAD_REQUEST;
     }
 
