@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
     
     while(true) {
         int num = epoll_wait(epollfd, events, MAX_EVENT_NUMBER, -1);
+        printf("epoll 事件数量： %d\n", num);
         if(num < 0 && errno != EINTR) {
             perror("epoll wait");
             break;
@@ -128,6 +129,12 @@ int main(int argc, char *argv[]) {
                 struct sockaddr_in client_addr;
                 socklen_t client_addr_len = sizeof(client_addr);
                 int connfd = accept(listenfd, (struct sockaddr *)&client_addr, &client_addr_len);
+
+                if(connfd < 0) {
+                    printf("err sockfd, errno is: %d\n", errno);
+                    continue;
+                }
+
                 printf("获取到新的client fd = %d\n", connfd);
                 if(Httpconn::m_user_count >= MAX_FD) {
                     // 连接数已满
@@ -138,19 +145,21 @@ int main(int argc, char *argv[]) {
                 users[connfd].init(connfd, client_addr);
             }
             // 对方异常断开
-            else if(events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
+            else if(ev.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
                 users[i].close_conn();
             }
-            else if(events[i].events & EPOLLIN) {
+            else if(ev.events & EPOLLIN) {
                 // 一次性把所有数据都读完
                 if(users[fd].read()) {
-                    pool->append(users + fd);
+                    printf("sockfd=%d 有数据了\n", fd);
+                    pool->append(&users[fd]);
                 }
                 else {
                     users[fd].close_conn();
                 }
             }
-            else if(events[i].events & EPOLLOUT) {
+            else if(ev.events & EPOLLOUT) {
+                printf("写！！main start write!\n");
                 if(!users[fd].write()) {
                     users[fd].close_conn();
                 }

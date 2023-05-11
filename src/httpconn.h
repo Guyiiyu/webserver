@@ -14,6 +14,9 @@
 #include <sys/errno.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/uio.h>
 
 #include "locker.h"
 #include "threadpool.h"
@@ -60,8 +63,9 @@ public:
    
 
 public:
-    static const int READ_BUFFER_SIZE = 2048;
-    static const int WRITE_BUFFER_SIZE = 2048;
+    static const int READ_BUFFER_SIZE = 2048;   // 读缓冲区的大小
+    static const int WRITE_BUFFER_SIZE = 2048;  // 写缓冲区的大小
+    static const int FILENAME_LEN = 200;        // 文件名的最大长度
     static int m_epollfd;
     static int m_user_count;
 
@@ -70,20 +74,31 @@ public:
 private:
     int m_sockfd;
     sockaddr_in m_addr;
-    char m_read_buf[READ_BUFFER_SIZE];
-    int m_read_idx;                         // 标识该读的起始下标
-    char m_write_buf[WRITE_BUFFER_SIZE];
 
+    char m_read_buf[READ_BUFFER_SIZE];      // 读缓冲区
+    int m_read_idx;                         // 标识该读的起始下标
     int m_checked_index;                    // 下一个该从缓冲区取字符的位置
     int m_start_line;                       // 当前解析的行的起始位置
+
+    CHECK_STATE m_check_state;              // 主状态机所处状态
+
     char *m_url;                            // 请求目标的目标文件名
     char *m_versoin;                        // 协议版本
     METHOD m_method;                        // 请求方法
     char *m_host;                           // 主机名
     bool m_linger;                          // 是否保持连接
+    int m_content_len;                      // HTTP请求的消息总长度
+    char m_real_file[FILENAME_LEN];         // 请求的目标文件的完整路径
 
-    CHECK_STATE m_check_state;              // 主状态机所处状态
-
+    char m_write_buf[WRITE_BUFFER_SIZE];    // 写缓冲区
+    int m_write_idx;                        // 写缓冲区中待发送的字节数
+    struct stat m_file_stat;                // 目标文件的状态
+    char *m_file_address;                   // 目标文件被mmap到内存中的起始位置
+    struct iovec m_iv[2];                   
+    int m_iv_count;                         // 表示被写内存块的数量
+    int bytes_to_send;
+    int bytes_have_send;
+    
 
 
 private:
@@ -95,9 +110,21 @@ private:
     LINE_STATUS parse_line();
     void init();                                    // 初始化一些信息
     inline char *get_line() {
+        printf("m_read_buf=%lld m_start_line = %d\n", (long long)m_read_buf, m_start_line);
         return m_read_buf + m_start_line;
     }
     HTTP_CODE do_request();
+
+    void unmap();
+    bool process_write(HTTP_CODE ret);                       // 填充HTTP响应
+    bool add_response( const char* format, ... );
+    bool add_content_type();
+    bool add_status_line( int status, const char* title );
+    bool add_headers( int content_length );
+    bool add_content_length( int content_length );
+    bool add_linger();
+    bool add_blank_line();
+    bool add_content( const char* content );
 };
 
 
