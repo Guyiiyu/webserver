@@ -57,11 +57,11 @@ public:
     Httpconn() = default;
     ~Httpconn() = default;
 
-    void process();                                 // 处理客户端请求
-    void init(int sockfd, const sockaddr_in &addr);       // 初始化新连接
-    void close_conn();                              // 关闭连接 
-    bool read();                                    // 非阻塞读
-    bool write();                                   // 非阻塞写
+    void process();                                     // 处理客户端请求
+    void init(int sockfd, const sockaddr_in &addr);     // 初始化新连接
+    void close_conn();                                  // 关闭连接 
+    bool read();                                        // 非阻塞读
+    bool write();                                       // 非阻塞写
    
 
 public:
