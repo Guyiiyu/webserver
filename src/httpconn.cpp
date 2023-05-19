@@ -445,62 +445,6 @@ bool Httpconn::process_write(Httpconn::HTTP_CODE ret) {
     return true;
 }
 
-// // 根据服务器处理HTTP请求的结果，决定返回给客户端的内容
-// bool Httpconn::process_write(HTTP_CODE ret) {
-//     switch (ret)
-//     {
-//         case INTERNAL_ERROR:
-//             add_status_line( 500, error_500_title );
-//             add_headers( strlen( error_500_form ) );
-//             if ( ! add_content( error_500_form ) ) {
-//                 return false;
-//             }
-//             break;
-//         case BAD_REQUEST:
-//             add_status_line( 400, error_400_title );
-//             add_headers( strlen( error_400_form ) );
-//             if ( ! add_content( error_400_form ) ) {
-//                 return false;
-//             }
-//             break;
-//         case NO_RESOURCE:
-//             add_status_line( 404, error_404_title );
-//             add_headers( strlen( error_404_form ) );
-//             if ( ! add_content( error_404_form ) ) {
-//                 return false;
-//             }
-//             break;
-//         case FORBIDDEN_REQUEST:
-//             add_status_line( 403, error_403_title );
-//             add_headers(strlen( error_403_form));
-//             if ( ! add_content( error_403_form ) ) {
-//                 return false;
-//             }
-//             break;
-//         case FILE_REQUEST:
-//             add_status_line(200, ok_200_title );
-//             add_headers(m_file_stat.st_size);
-//             m_iv[ 0 ].iov_base = m_write_buf;
-//             m_iv[ 0 ].iov_len = m_write_idx;
-//             m_iv[ 1 ].iov_base = m_file_address;
-//             m_iv[ 1 ].iov_len = m_file_stat.st_size;
-//             m_iv_count = 2;
-
-//             bytes_to_send = m_write_idx + m_file_stat.st_size;
-
-//             return true;
-//         default:
-//             return false;
-//     }
-
-//     m_iv[ 0 ].iov_base = m_write_buf;
-//     m_iv[ 0 ].iov_len = m_write_idx;
-//     m_iv_count = 1;
-//     bytes_to_send = m_write_idx;
-//     return true;
-// }
-
-
 // 写HTTP响应
 bool Httpconn::write() {
     int temp = 0;
